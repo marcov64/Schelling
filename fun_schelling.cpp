@@ -4,93 +4,136 @@ MODELBEGIN
 
 
 
-EQUATION("InitLattice")
+EQUATION("Assess")
 /*
-Initialize the model. Generate the lattice and place agents randomly.
+Controls whether the number of different type neighbours are above the threshold.
+Returns 1 if the agent is happy (few strangers) and 0 if it is not (too many strangers).
 */
-v[0]= V("nrow");    // n. of rows in the lattice
-v[1]= V("ncol"); //n.columns in the lattice
-p->init_lattice_net(v[0],v[1],"node", 1);
-   
-CYCLE(cur, "node")
- { k=VS_NODEID(cur)-1;
-   i=k/(int)v[1];
-   j=k-i*(int)v[1];
-   WRITES(cur,"row",(double)i+1);
-   WRITES(cur,"col",(double)j+1);
- 
- }
-/***
-CYCLE(cur, "node")
- {
- ADDNOBJS(cur,"testLink",7);
- cur1=SEARCHS(cur,"testLink");
+v[0]=VS(c,"Type");
 
- CYCLES_LINK(cur,curl)
+v[1]=v[2]=0;
+
+v[5]=V("Threshold");
+CYCLES_LINK(c->hook,curl)
  {
   cur2=LINKTO(curl);
-  v[50]=VS(cur2,"row");
-  WRITES(cur1,"tlrow",v[50]);
-  v[50]=VS(cur2,"col");
-  WRITES(cur1,"tlcol",v[50]);
-  cur1->hook=cur2;
-  cur1=go_brother(cur1);
- }
-}
-INTERACT("PROVA", v[0]);    
-***/
-
-v[2]=v[1];
-v[3]=v[0];
-
-v[80]=V("PlotLattice");
-if(v[80]==1)
-{
-v[4]=V("PixWidth");
-v[5]=V("PixHeight"); 
-init_lattice(v[4],v[5], v[3], v[2], "", "", "", NULL, 2);
-}
-v[10]=V("numAgents");
-ADDNOBJ("Agent",v[10]-1);
-
-v[12]=v[0]*v[1];
-v[16]=V("shareType");
-v[99]=0;
-CYCLE(cur, "Agent")
- {v[99]++;
-  v[13]=rnd_integer(1, v[12]);
-  cur1=TSEARCHT("node", v[12],v[13]);
-  while(cur1!=NULL && cur1->hook!=NULL)    cur1=go_brother(cur1);
-  if(cur1==NULL)
-     {
-      cur1=SEARCH("node");
-      while( cur1!=NULL && cur1->hook!=NULL)    cur1=go_brother(cur1);
-     } 
-  if(cur1==NULL)
-   { plog("\nError, lattice saturated, too many agents.\n");
-     INTERACT("Saturation", v[13]);
-     PARAMETER;
-     END_EQUATION(-1);
+  if(cur2->hook!=NULL)
+   {
+    v[20]=VS(cur2->hook,"Type");
+    if(v[20]==v[0])
+     v[1]++;
+    else
+     v[2]++; 
    }
-  cur->hook=cur1;
-  cur1->hook=cur;   
-  v[14]=VS(cur1,"row");
-  v[15]=VS(cur1,"col");
-  if(RND<v[16])
-   v[17]=1;
   else
-   v[17]=0; 
-  if(v[80]==1) 
-    update_lattice(v[14], v[15], v[17]);
-  WRITES(cur,"Type",v[17]); 
-  v[71]=V("meanThreshold");
-  v[72]=V("varThreshold");
-  v[73]=min(1,max(0,norm(v[71],v[72])));
-  WRITES(cur,"Threshold",v[73]);    
+   v[1]++; 
  }
-TSEARCHT_INI("Agent", v[10] ); 
-PARAMETER
-RESULT(1 )
+if(v[1]+v[2]>0) 
+ v[6]=v[1]/(v[1]+v[2]);
+else
+ v[6]=1;
+   
+if(v[6]>v[5])
+ v[3]=1;
+else
+ v[3]=0;  
+RESULT(v[3] )
+
+
+EQUATION("FindNASP")
+/*
+Find the nearest available satisfactory position
+*/
+
+//v[0]=VS(c,"Assess");
+//if(v[0]==1)
+// END_EQUATION(0);
+cur8=c->hook;
+cur=SEARCH("appL");
+cur->hook=c->hook;
+WRITES(cur,"positive",0);
+WRITES(cur,"expanded",VS_NODEID(c->hook));
+WRITES(cur,"dist",0);
+
+v[1]=v[2]=v[11]=0;
+v[12]=1;
+for(v[1]=v[2]=0; v[2]==0 && v[12]==1; v[1]++)
+ {
+ v[12]=0;
+ CYCLE(cur, "appL")
+  {
+   if(VS(cur,"dist")==v[1])
+    {
+     CYCLES_LINK(cur->hook,curl)
+      {
+       cur2=LINKTO(curl);
+       v[6]=VS_NODEID(cur2);
+       v[7]=0;
+       CYCLE(cur6, "appL")
+        {
+         if(v[6]==VS(cur6,"expanded"))
+          { 
+           v[7]=1;
+           break;
+          }  
+        }
+       if(v[7]==0)
+       {v[12]=1;
+        cur3=ADDOBJ("appL");
+        cur3->hook=cur2;
+        v[11]++;
+       // update_lattice(VS(cur2,"row"),VS(cur2,"col"),3);
+        WRITES(cur3,"dist",v[1]+1);
+        v[6]=VS_NODEID(cur2);
+        WRITES(cur3,"expanded",v[6]);
+        if(cur2->hook!=NULL)
+         WRITES(cur3,"positive",0);
+        else
+         {
+          c->hook=cur2;
+          cur2->hook=c;
+          v[5]=V_CHEAT("Assess",c);
+          WRITES(cur3,"positive",v[5]);
+          cur2->hook=NULL;
+          c->hook=cur8;
+          if(v[5]==1) 
+           v[2]++;
+         } 
+        } 
+      }
+      
+    }
+  }//end of CYCLE
+
+//  SORT("appL","expanded", "UP");
+ // INTERACTS(SEARCH("appL"),"b",v[2]);
+// sprintf(msg, "%d (%d)\n",(int)v[1], t);
+// plog(msg);
+ cmd(inter, "update");
+ if(debug_flag==1 || v[1]>300|| v[12]==0)
+  {
+  SORT("appL","expanded", "UP");
+  INTERACTS(c,"No cells available",v[2]);
+  }
+ }//end of for(....) 
+
+WRITE("maxcellNASP",v[11]);
+if(v[2]>0)
+ cur5=RNDDRAW("appL","positive");
+
+v[9]=0;
+CYCLE_SAFE(cur, "appL")
+ {if(v[9]==1)
+   {
+    DELETE(cur);
+   }
+  v[9]=1;
+ }  
+
+cur8->hook=NULL;//free the old cell
+c->hook=cur5->hook; //new cell of the agent
+cur5->hook->hook=c; //new agent of the cell
+RESULT( v[1])
 
 EQUATION("Action")
 /*
@@ -121,63 +164,46 @@ if(v[2]==v[1])
   WRITE("Complete",(double)t);
   END_EQUATION(0);
  } 
+//cur is the unsatisfied agent agent bound to move 
 v[4]=VS(cur->hook,"row");
 v[5]=VS(cur->hook,"col"); 
 if(V("PlotLattice")==1)
  update_lattice(v[4], v[5], 2);
+V_CHEAT("FindNASP",cur); //new system 
+/*** OBSOLETE ***
 cur->hook->hook=NULL;
 
 v[13]=rnd_integer(1, v[12]);
 cur1=TSEARCHT("node", v[12],v[13]);
-while(cur1!=NULL && cur1->hook!=NULL)    cur1=go_brother(cur1);
+v[14]=0;
+while(cur1!=NULL && cur1->hook!=NULL && v[14]==0)
+  {
+   if(cur1->hook==NULL )
+    {
+    v[14]=1;
+    }
+   else   
+    cur1=go_brother(cur1);
+  } 
 if(cur1==NULL)
 {
  cur1=SEARCH("node");
  while(cur1->hook!=NULL)    cur1=go_brother(cur1);
 } 
   cur->hook=cur1;
-  cur1->hook=cur;   
+  cur1->hook=cur; 
+    
   v[14]=VS(cur1,"row");
   v[15]=VS(cur1,"col");
+*****/
+  v[14]=VS(cur->hook,"row");
+  v[15]=VS(cur->hook,"col");
+
   v[17]=VS(cur,"Type"); 
 if(V("PlotLattice")==1)  
   update_lattice(v[14], v[15], v[17]);
   
 RESULT( 1)
-
-
-EQUATION("Assess")
-/*
-Controls whether the number of different type neighbours are above the threshold.
-Returns 1 if the agent is happy (few strangers) and 0 if it is not (too many strangers).
-*/
-v[0]=VS(c,"Type");
-
-v[1]=v[2]=0;
-
-v[5]=V("Threshold");
-CYCLES_LINK(c->hook,curl)
- {
-  cur2=LINKTO(curl);
-  if(cur2->hook!=NULL)
-   {
-    v[20]=VS(cur2->hook,"Type");
-    if(v[20]==v[0])
-     v[1]++;
-    else
-     v[2]++; 
-   }
- }
-if(v[1]+v[2]>0) 
- v[6]=v[1]/(v[1]+v[2]);
-else
- v[6]=1;
-   
-if(v[6]>v[5])
- v[3]=1;
-else
- v[3]=0;  
-RESULT(v[3] )
 
 
 
@@ -271,6 +297,97 @@ v[3]=V("aThreshold");
 v[4]=v[2]*v[3]+(1-v[3])*v[0]/v[1];
 
 RESULT(v[4] )
+
+
+
+
+EQUATION("InitLattice")
+/*
+Initialize the model. Generate the lattice and place agents randomly.
+*/
+v[0]= V("nrow");    // n. of rows in the lattice
+v[1]= V("ncol"); //n.columns in the lattice
+p->init_lattice_net(v[0],v[1],"node", 1);
+   
+CYCLE(cur, "node")
+ { k=VS_NODEID(cur)-1;
+   i=k/(int)v[1];
+   j=k-i*(int)v[1];
+   WRITES(cur,"row",(double)i+1);
+   WRITES(cur,"col",(double)j+1);
+ 
+ }
+/***
+CYCLE(cur, "node")
+ {
+ ADDNOBJS(cur,"testLink",7);
+ cur1=SEARCHS(cur,"testLink");
+
+ CYCLES_LINK(cur,curl)
+ {
+  cur2=LINKTO(curl);
+  v[50]=VS(cur2,"row");
+  WRITES(cur1,"tlrow",v[50]);
+  v[50]=VS(cur2,"col");
+  WRITES(cur1,"tlcol",v[50]);
+  cur1->hook=cur2;
+  cur1=go_brother(cur1);
+ }
+}
+INTERACT("PROVA", v[0]);    
+***/
+
+v[2]=v[1];
+v[3]=v[0];
+
+v[80]=V("PlotLattice");
+if(v[80]==1)
+{
+v[4]=V("PixWidth");
+v[5]=V("PixHeight"); 
+init_lattice(v[4],v[5], v[3], v[2], "", "", "", NULL, 2);
+}
+v[10]=V("numAgents");
+ADDNOBJ("Agent",v[10]-1);
+
+v[12]=v[0]*v[1];
+v[16]=V("shareType");
+v[99]=0;
+CYCLE(cur, "Agent")
+ {v[99]++;
+  v[13]=rnd_integer(1, v[12]);
+  cur1=TSEARCHT("node", v[12],v[13]);
+  while(cur1!=NULL && cur1->hook!=NULL)    cur1=go_brother(cur1);
+  if(cur1==NULL)
+     {
+      cur1=SEARCH("node");
+      while( cur1!=NULL && cur1->hook!=NULL)    cur1=go_brother(cur1);
+     } 
+  if(cur1==NULL)
+   { plog("\nError, lattice saturated, too many agents.\n");
+     INTERACT("Saturation", v[13]);
+     PARAMETER;
+     END_EQUATION(-1);
+   }
+  cur->hook=cur1;
+  cur1->hook=cur;   
+  v[14]=VS(cur1,"row");
+  v[15]=VS(cur1,"col");
+  if(RND<v[16])
+   v[17]=1;
+  else
+   v[17]=0; 
+  if(v[80]==1) 
+    update_lattice(v[14], v[15], v[17]);
+  WRITES(cur,"Type",v[17]); 
+  v[71]=V("meanThreshold");
+  v[72]=V("varThreshold");
+  v[73]=min(1,max(0,norm(v[71],v[72])));
+  WRITES(cur,"Threshold",v[73]);    
+ }
+TSEARCHT_INI("Agent", v[10] ); 
+PARAMETER
+RESULT(1 )
 
 MODELEND
 

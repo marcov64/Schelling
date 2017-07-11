@@ -21,6 +21,15 @@ Label Root
 
 		}
 
+		Son: appL
+		Label appL
+		{
+			Param: positive
+			Param: expanded
+			Param: dist
+
+		}
+
 		Var: InitLattice
 		Param: nrow
 		Param: ncol
@@ -41,6 +50,8 @@ Label Root
 		Param: aThreshold
 		Param: ActAvThreshold
 		Param: ActVarThreshold
+		Func: FindNASP
+		Param: maxcellNASP
 
 	}
 
@@ -56,23 +67,25 @@ Object: Lattice C	1
 Var: InitLattice 0 n + d n
 Param: nrow 0 n + n n	50
 Param: ncol 0 n + n n	100
-Param: PixWidth 0 n + n n	600
-Param: PixHeight 0 n + n n	300
+Param: PixWidth 0 n + n n	1200
+Param: PixHeight 0 n + n n	600
 Var: numAgents 0 n + n n
 Param: shareType 0 n + n n	0.5
 Func: Assess 0 n + n n
 Var: Action 0 n + d n
 Func: Check 0 n + n n
 Var: ShareSameType 0 s + n n
-Param: ShareAgents 0 n + n n	0.9
+Param: ShareAgents 0 n + n n	0.7
 Func: AssignState 0 n + n n
 Param: PlotLattice 0 n + n n	1
 Param: Complete 0 s + n n	0
-Param: meanThreshold 0 n + n n	0.5
+Param: meanThreshold 0 n + n n	0.8
 Param: varThreshold 0 n + n n	0
 Param: aThreshold 0 n + n n	0.999
 Param: ActAvThreshold 0 s + n n	0
 Param: ActVarThreshold 0 s + n n	0
+Func: FindNASP 0 s + d n
+Param: maxcellNASP 0 s + n n	0
 
 Object: node N	1
 Param: row 0 n + n n	0
@@ -82,6 +95,11 @@ Param: State 0 n + n n	0
 Object: Agent C	1
 Param: Type 0 n + n n	0
 Var: Threshold 1 n + n n	0
+
+Object: appL C	1
+Param: positive 0 n + n n	0
+Param: expanded 0 n + n n	0
+Param: dist 0 n + n n	0
 
 SIM_NUM 1
 SEED 2
@@ -221,6 +239,18 @@ _INIT_
 
 END_DESCRIPTION
 
+Function_FindNASP
+(no description available)
+_INIT_
+
+END_DESCRIPTION
+
+Parameter_maxcellNASP
+(no description available)
+_INIT_
+
+END_DESCRIPTION
+
 Object_node
 (no description available )
 _INIT_
@@ -258,6 +288,30 @@ _INIT_
 END_DESCRIPTION
 
 Variable_Threshold
+(no description available)
+_INIT_
+
+END_DESCRIPTION
+
+Object_appL
+(no description available )
+_INIT_
+
+END_DESCRIPTION
+
+Parameter_positive
+(no description available)
+_INIT_
+
+END_DESCRIPTION
+
+Parameter_expanded
+(no description available)
+_INIT_
+
+END_DESCRIPTION
+
+Parameter_dist
 (no description available)
 _INIT_
 

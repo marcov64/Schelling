@@ -54,10 +54,10 @@ Object: Root C	1
 
 Object: Lattice C	1
 Var: InitLattice 0 n + d n
-Param: nrow 0 n + n n	50
-Param: ncol 0 n + n n	100
-Param: PixWidth 0 n + n n	600
-Param: PixHeight 0 n + n n	300
+Param: nrow 0 n + n n	100
+Param: ncol 0 n + n n	200
+Param: PixWidth 0 n + n n	1200
+Param: PixHeight 0 n + n n	600
 Var: numAgents 0 n + n n
 Param: shareType 0 n + n n	0.5
 Func: Assess 0 n + n n
@@ -68,7 +68,7 @@ Param: ShareAgents 0 n + n n	0.9
 Func: AssignState 0 n + n n
 Param: PlotLattice 0 n + n n	1
 Param: Complete 0 s + n n	0
-Param: meanThreshold 0 n + n n	0.5
+Param: meanThreshold 0 n + n n	0.8
 Param: varThreshold 0 n + n n	0
 Param: aThreshold 0 n + n n	0.999
 Param: ActAvThreshold 0 s + n n	0

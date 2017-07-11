@@ -48,8 +48,8 @@ Label Root
 }
 
 
-
 DATA
+
 Object: Root C	1
 
 Object: Lattice C	1
@@ -87,7 +87,7 @@ SIM_NUM 1
 SEED 2
 MAX_STEP 100000
 EQUATION fun_schelling.cpp
-MODELREPORT modelreport.html
+ MODELREPORT modelreport.html
 
 DESCRIPTION
 
